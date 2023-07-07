@@ -2,58 +2,49 @@ import os, shutil, sys
 from tkinter import *
 from tkinter import filedialog
 from os import path
+from FileSorterDictionary import FILE_TYPE_NAMES
 
-UnsortedDir = "Unsorted"
-SortedDir = "Sorted"
+UI_FONT: tuple[str, int]; GUI = ("Arial", 12), None
 
-FileTypeNames = {
-    "txt": "Text",
+UnsortedDir: str; SortedDir: str = "Unsorted", "Sorted"
 
-    "js": "JavaScript",
-    "json": "JavaScript",
+def GetFolder(newpath: str): #Creates Folder! Not Get
+    if not path.exists(newpath): #Checks if the path exists else make the folder
+        os.makedirs(newpath) #Creates Folder
 
-    "b": "Brainfuck",
-    "bf": "Brainfuck",
-
-    "py": "Python",
-
-    "png": "Pictures",
-    "jepg": "Pictures",
-}
-
-def GetFolder(newpath):
-    if not path.exists(newpath):
-        os.makedirs(newpath)
-
-def GetClassName(file):
+def GetClassName(file: os.DirEntry) -> str:
     fileClass: str = path.basename(file).split('.')[1].lower()
     
-    a: str = FileTypeNames.get(fileClass, fileClass)
+    a: str = FILE_TYPE_NAMES.get(fileClass, fileClass.upper)
 
-    if a == fileClass:
+    if a.upper() == fileClass: #The File Class is equal to
         print(f"The file class name is {fileClass} doesn't exist", file=sys.stderr)
     
     return a
 
-def EveryFile(inside):
+def FolderLoad(name: str, file: os.DirEntry) -> None:
+    folderDir: str = f"{SortedDir}\\{name}" #The Folder Name
+            
+    if not path.exists(folderDir): #Checks if the file doesn't exist
+        shutil.copytree(path.abspath(file), folderDir) #Copies Folder
 
-    for index, file in enumerate(inside):
+def FileLoad(name: str, file: os.DirEntry) -> None:
+    fileClass: str; toFolder: str = GetClassName(file), f"{SortedDir}\\{fileClass}" #The get file fullname; The Folder Name
+
+    GetFolder(toFolder) #Creates Folder
+
+    if not path.exists(f"{toFolder}\\{name}"): #Checks if the file doesn't exist
+        shutil.copyfile(path.abspath(file), f"{toFolder}\\{name}") #Clones the file
+
+def EveryFile(inside: os._ScandirIterator) -> None:
+
+    for _, file in enumerate(inside):
         name: str = path.basename(file)
 
-        if path.isfile(file):
-            
-            fileClass: str = GetClassName(file)
-
-            toFolder: str = f"{SortedDir}\\{fileClass}"
-
-            GetFolder(toFolder)
-
-            shutil.copyfile(path.abspath(file), f"{toFolder}\\{name}")
-        else:
-            folderDir = f"{SortedDir}\\{name}"
-            
-            if not path.exists(folderDir):
-                shutil.copytree(path.abspath(file), folderDir)
+        if path.isfile(file): #Is File
+            FileLoad(name, file)
+        else: #Is Folder
+            FolderLoad(name, file)
         
         print(f"File {name} has been completed")
 
@@ -62,11 +53,9 @@ def EveryFile(inside):
 def startup():
     global UnsortedDir, SortedDir
 
-    inSorted = os.scandir(UnsortedDir)
+    inSorted: os._ScandirIterator = os.scandir(UnsortedDir) #Gets all files/folders in a Folder 
 
-    EveryFile(inSorted)
-
-UI_FONT = ("Arial", 12)
+    EveryFile(inSorted) #Iterators every child of "inSorted"
 
 class UI:
 
@@ -106,10 +95,8 @@ class UI:
 def CreateUI():
     global GUI
 
-    GUI = UI()
+    GUI: UI = UI()
 
     GUI.root.mainloop()
 
 CreateUI()
-
-#startup()
